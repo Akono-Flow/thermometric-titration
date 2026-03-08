@@ -1,0 +1,2395 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThermoCal | Thermometric Titration Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Spectral:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #eef1f6;
+  --surface: #ffffff;
+  --surface2: #f4f7fb;
+  --surface3: #e8edf5;
+  --border: #d0d8e8;
+  --text: #1a2340;
+  --text-dim: #556080;
+  --text-muted: #8a96b0;
+  --accent: #0b81a8;
+  --accent-hover: #0969a0;
+  --accent-light: #ddf2fa;
+  --danger: #d63520;
+  --danger-light: #fff0ee;
+  --success: #1a8f56;
+  --success-light: #e8faf1;
+  --warning: #d97706;
+  --rising: #2455d4;
+  --rising-light: rgba(36,85,212,0.10);
+  --falling: #c8291e;
+  --falling-light: rgba(200,41,30,0.10);
+  --eq: #7c3aed;
+  --eq-light: rgba(124,58,237,0.10);
+  --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.12);
+  --radius: 12px;
+  --radius-sm: 7px;
+  --mono: 'DM Mono', 'Courier New', monospace;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --serif: 'Spectral', Georgia, serif;
+}
+[data-theme="dark"] {
+  --bg: #0c1018;
+  --surface: #141924;
+  --surface2: #1a2130;
+  --surface3: #202838;
+  --border: #2a3548;
+  --text: #e4ebf8;
+  --text-dim: #8da0c0;
+  --text-muted: #546080;
+  --accent: #34b8e0;
+  --accent-hover: #50caf0;
+  --accent-light: #0a2030;
+  --danger: #ff6b5b;
+  --danger-light: #1e1010;
+  --success: #38c07a;
+  --success-light: #0a1e12;
+  --warning: #f5a020;
+  --rising: #5a8ef5;
+  --rising-light: rgba(90,142,245,0.12);
+  --falling: #f07060;
+  --falling-light: rgba(240,112,96,0.12);
+  --eq: #b07af8;
+  --eq-light: rgba(176,122,248,0.12);
+  --shadow: 0 1px 4px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.25);
+  --shadow-lg: 0 6px 30px rgba(0,0,0,0.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;transition:background .3s,color .3s;}
+
+/* ─── HEADER ─────────────────────────────────────── */
+.app-header{
+  position:sticky;top:0;z-index:200;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;height:58px;padding:0 20px;gap:16px;
+  box-shadow:var(--shadow);
+}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.brand-logo{
+  width:34px;height:34px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent) 0%,#0a4f7a 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+}
+.brand-title{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.5px;}
+.brand-sub{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:500;}
+.header-nav{display:flex;gap:2px;margin-left:auto;}
+.nav-tab{
+  padding:6px 15px;border:none;background:transparent;
+  color:var(--text-dim);font-family:var(--sans);font-size:13px;font-weight:500;
+  border-radius:6px;cursor:pointer;transition:all .2s;
+}
+.nav-tab:hover{background:var(--surface2);color:var(--text);}
+.nav-tab.active{background:var(--accent-light);color:var(--accent);font-weight:600;}
+.header-actions{display:flex;gap:8px;align-items:center;margin-left:8px;}
+.icon-btn{
+  width:36px;height:36px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface2);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:15px;transition:all .2s;color:var(--text-dim);
+}
+.icon-btn:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+
+/* ─── LAYOUT ──────────────────────────────────────── */
+.page{padding:18px;max-width:1700px;margin:0 auto;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.top-row{
+  display:grid;
+  grid-template-columns:290px 1fr 270px;
+  gap:14px;margin-bottom:14px;
+}
+.bottom-row{
+  display:grid;
+  grid-template-columns:310px 1fr;
+  gap:14px;
+}
+
+/* ─── CARDS ───────────────────────────────────────── */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
+}
+.card-head{
+  padding:11px 16px;border-bottom:1px solid var(--border);
+  background:var(--surface2);display:flex;align-items:center;gap:8px;
+}
+.card-head-title{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--text-dim);
+}
+.card-head-icon{font-size:14px;color:var(--accent);}
+.card-head-extra{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.card-body{padding:14px 16px;}
+
+/* ─── FORM ELEMENTS ───────────────────────────────── */
+.fg{margin-bottom:12px;}
+.fg:last-child{margin-bottom:0;}
+.fl{
+  display:block;font-size:11px;font-weight:600;color:var(--text-dim);
+  margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;
+}
+.fi,.fs{
+  width:100%;padding:7px 10px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);
+  font-family:var(--mono);font-size:12.5px;transition:border-color .2s;outline:none;
+}
+.fi:focus,.fs:focus{border-color:var(--accent);}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+
+/* ─── SLIDER ──────────────────────────────────────── */
+.sl-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.sl-lbl{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;}
+.sl-val{font-family:var(--mono);font-size:11.5px;color:var(--accent);font-weight:500;}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:3px;
+  background:var(--border);border-radius:2px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;background:var(--accent);
+  border-radius:50%;transition:transform .15s;box-shadow:0 0 0 3px var(--accent-light);
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.25);}
+
+/* ─── BUTTONS ─────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  padding:8px 15px;border:none;border-radius:var(--radius-sm);
+  font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;
+  transition:all .2s;letter-spacing:.2px;
+}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(11,129,168,.35);}
+.btn-success{background:var(--success);color:#fff;}
+.btn-success:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn-outline{background:transparent;color:var(--text-dim);border:1px solid var(--border);}
+.btn-outline:hover{background:var(--surface2);border-color:var(--text-dim);color:var(--text);}
+.btn-danger-ghost{background:transparent;color:var(--danger);border:1px solid transparent;padding:4px 8px;font-size:12px;}
+.btn-danger-ghost:hover{background:var(--danger-light);border-color:var(--danger);}
+.btn-block{width:100%;}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-xs{padding:3px 8px;font-size:11px;}
+
+/* ─── INCREMENT SELECTOR ──────────────────────────── */
+.inc-group{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.inc-btn{
+  min-width:40px;padding:6px 10px;border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);background:var(--surface2);color:var(--text-dim);
+  font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.inc-btn:hover,.inc-btn.active{
+  background:var(--accent);border-color:var(--accent);color:#fff;
+}
+
+/* ─── DIGITAL DISPLAY ─────────────────────────────── */
+.digital-panel{
+  background:#050d15;border:1px solid #1a3040;border-radius:10px;
+  padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  margin-bottom:12px;
+}
+[data-theme=dark] .digital-panel{background:#02080e;border-color:#142030;}
+.dp-item{text-align:center;}
+.dp-label{font-size:9.5px;text-transform:uppercase;letter-spacing:1.2px;color:#3a6878;margin-bottom:3px;}
+.dp-val{
+  font-family:var(--mono);font-size:24px;font-weight:400;
+  color:#00dfaa;letter-spacing:1px;
+  text-shadow:0 0 12px rgba(0,220,170,.5),0 0 24px rgba(0,220,170,.2);
+}
+.dp-unit{font-size:11px;color:#2a5568;margin-left:2px;}
+.dp-sep{width:1px;background:#1a3040;border-radius:1px;}
+
+/* ─── LAB VISUALIZATION ──────────────────────────── */
+.lab-wrap{
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;min-height:320px;position:relative;background:var(--surface);
+}
+
+/* ─── DATA TABLE ──────────────────────────────────── */
+.tbl-scroll{overflow-y:auto;max-height:260px;}
+table.data-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+table.data-tbl thead tr{background:var(--surface2);position:sticky;top:0;z-index:2;}
+table.data-tbl th{
+  padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);border-bottom:1px solid var(--border);
+}
+table.data-tbl td{padding:8px 12px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px;}
+table.data-tbl tr:hover td{background:var(--surface2);}
+table.data-tbl tr.rising-sel td{background:var(--rising-light);}
+table.data-tbl tr.falling-sel td{background:var(--falling-light);}
+.empty-state{text-align:center;padding:32px 16px;color:var(--text-muted);font-size:13px;}
+
+/* ─── GRAPH AREA ──────────────────────────────────── */
+.graph-toolbar{
+  padding:9px 14px;background:var(--surface2);border-bottom:1px solid var(--border);
+  display:flex;flex-wrap:wrap;gap:7px;align-items:center;
+}
+.sel-btn{
+  padding:5px 12px;border:1.5px solid var(--border);border-radius:20px;
+  background:var(--surface);color:var(--text-dim);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.sel-btn:hover{border-color:var(--text-dim);}
+.sel-btn.mode-rising,.sel-btn.mode-rising:hover{border-color:var(--rising);color:var(--rising);background:var(--rising-light);}
+.sel-btn.mode-falling,.sel-btn.mode-falling:hover{border-color:var(--falling);color:var(--falling);background:var(--falling-light);}
+.sel-btn.active-rising{background:var(--rising);border-color:var(--rising);color:#fff;}
+.sel-btn.active-falling{background:var(--falling);border-color:var(--falling);color:#fff;}
+
+.canvas-wrap{position:relative;overflow:hidden;}
+#graph-canvas{display:block;cursor:crosshair;}
+
+/* ─── EQUIVALENCE RESULT ─────────────────────────── */
+.eq-result{
+  display:none;margin:10px 14px;
+  background:var(--eq-light);border:1.5px solid var(--eq);border-radius:10px;
+  padding:12px 16px;
+}
+.eq-result.show{display:block;}
+.eq-result-title{
+  font-size:10px;text-transform:uppercase;letter-spacing:1px;
+  color:var(--eq);font-weight:700;margin-bottom:9px;
+}
+.eq-vals{display:flex;gap:28px;}
+.eq-v{text-align:center;}
+.eq-v-lbl{font-size:9.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;}
+.eq-v-num{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--eq);}
+
+/* ─── AXIS SETTINGS (details/summary) ────────────── */
+.axis-settings{border-top:1px solid var(--border);padding:0;}
+.axis-settings summary{
+  cursor:pointer;padding:10px 14px;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.7px;color:var(--accent);
+  user-select:none;list-style:none;display:flex;align-items:center;gap:6px;
+  background:var(--surface2);
+}
+.axis-settings summary::-webkit-details-marker{display:none;}
+.axis-settings[open] summary{border-bottom:1px solid var(--border);}
+.axis-settings-body{padding:12px 14px;}
+.ax-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.ax-group-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:7px;}
+.ax-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+.ax-i{
+  width:100%;padding:5px 8px;border:1px solid var(--border);
+  border-radius:5px;background:var(--surface2);color:var(--text);
+  font-family:var(--mono);font-size:11.5px;outline:none;
+}
+.ax-i:focus{border-color:var(--accent);}
+
+/* ─── TOGGLE SWITCH ──────────────────────────────── */
+.tgl-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;}
+.tgl-lbl{font-size:12px;color:var(--text-dim);}
+.tgl{position:relative;width:34px;height:18px;display:inline-block;}
+.tgl input{opacity:0;width:0;height:0;}
+.tgl-slider{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background:var(--border);border-radius:18px;cursor:pointer;transition:.25s;
+}
+.tgl-slider:before{
+  content:'';position:absolute;width:12px;height:12px;left:3px;bottom:3px;
+  background:#fff;border-radius:50%;transition:.25s;
+}
+.tgl input:checked+.tgl-slider{background:var(--accent);}
+.tgl input:checked+.tgl-slider:before{transform:translateX(16px);}
+
+/* ─── POINT STYLE ────────────────────────────────── */
+.ps-row{display:flex;gap:6px;align-items:center;}
+.ps-opt{
+  padding:4px 12px;border:1.5px solid var(--border);border-radius:5px;
+  background:var(--surface2);color:var(--text-dim);font-size:13px;cursor:pointer;transition:all .2s;
+}
+.ps-opt.active{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+
+/* ─── LEGEND ─────────────────────────────────────── */
+.graph-legend{
+  display:flex;gap:14px;padding:8px 14px;flex-wrap:wrap;
+  align-items:center;border-top:1px solid var(--border);background:var(--surface2);
+}
+.lg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);}
+.lg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.lg-line{width:18px;height:2px;flex-shrink:0;}
+
+/* ─── TOOLTIP / CLICK CARD ───────────────────────── */
+.pt-tooltip{
+  position:fixed;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:7px 11px;font-size:11.5px;box-shadow:var(--shadow-lg);
+  pointer-events:none;display:none;z-index:300;
+}
+.pt-tooltip.show{display:block;}
+.click-card{
+  position:fixed;background:var(--surface);border:1px solid var(--border);
+  border-radius:11px;padding:13px 16px;box-shadow:var(--shadow-lg);
+  display:none;z-index:300;min-width:170px;
+}
+.click-card.show{display:block;}
+.cc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.cc-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-muted);}
+.cc-close{background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-dim);line-height:1;}
+.cc-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
+.cc-row:last-child{border:none;}
+.cc-key{font-size:11px;color:var(--text-dim);}
+.cc-val{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text);}
+
+/* ─── REACTION EQUATION ──────────────────────────── */
+.rxn-box{
+  background:var(--accent-light);border:1px solid var(--accent);
+  border-radius:var(--radius-sm);padding:8px 12px;
+  font-family:var(--mono);font-size:11.5px;color:var(--accent);
+  margin-bottom:10px;text-align:center;letter-spacing:.2px;
+}
+
+/* ─── NOTES PAGE ─────────────────────────────────── */
+.notes-page{max-width:850px;margin:0 auto;padding:28px 20px;}
+.notes-h1{font-family:var(--serif);font-size:30px;font-weight:600;color:var(--text);letter-spacing:-.5px;margin-bottom:6px;}
+.notes-tagline{font-size:14px;color:var(--text-dim);font-style:italic;margin-bottom:28px;}
+.notes-section{margin-bottom:32px;}
+.notes-h2{
+  font-family:var(--serif);font-size:20px;font-weight:600;color:var(--accent);
+  padding-bottom:7px;border-bottom:1px solid var(--border);margin-bottom:14px;
+}
+.notes-h3{font-size:14px;font-weight:700;color:var(--text);margin:12px 0 6px;}
+.notes-p{font-size:13.5px;line-height:1.85;color:var(--text-dim);margin-bottom:10px;}
+.eq-block{
+  background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);
+  padding:10px 14px;border-radius:var(--radius-sm);font-family:var(--mono);font-size:12.5px;margin:12px 0;
+  color:var(--text);
+}
+.note-callout{
+  background:var(--accent-light);border:1px solid var(--accent);
+  border-radius:var(--radius-sm);padding:11px 14px;margin:12px 0;
+  font-size:13px;color:var(--text);line-height:1.7;
+}
+.notes-tbl{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;}
+.notes-tbl th,.notes-tbl td{padding:9px 13px;border:1px solid var(--border);text-align:left;}
+.notes-tbl th{background:var(--surface2);font-weight:600;}
+.notes-tbl tr:nth-child(even) td{background:var(--surface2);}
+
+/* ─── TOAST ──────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:22px;right:22px;background:var(--surface);
+  border:1px solid var(--border);border-radius:10px;padding:11px 16px;
+  box-shadow:var(--shadow-lg);z-index:500;font-size:13px;font-weight:500;
+  display:flex;align-items:center;gap:8px;
+  transform:translateY(60px);opacity:0;transition:all .3s;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ─── MISC ───────────────────────────────────────── */
+.sep{height:1px;background:var(--border);margin:10px 0;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted);}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;}
+.badge-blue{background:var(--rising-light);color:var(--rising);}
+.badge-red{background:var(--falling-light);color:var(--falling);}
+.badge-purple{background:var(--eq-light);color:var(--eq);}
+.stat-pill{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 10px;
+  border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--text-dim);background:var(--surface2);
+}
+
+@media(max-width:1100px){
+  .top-row{grid-template-columns:260px 1fr;}
+  #setup-col:last-child{display:none;}
+}
+@media(max-width:750px){
+  .top-row,.bottom-row{grid-template-columns:1fr;}
+  .ax-cols{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <a class="brand" href="#">
+    <div class="brand-logo">🧪</div>
+    <div>
+      <div class="brand-title">ThermoCal</div>
+      <div class="brand-sub">Titration Simulator</div>
+    </div>
+  </a>
+
+  <nav class="header-nav">
+    <button class="nav-tab active" data-tab="simulator">⚗️ Simulator</button>
+    <button class="nav-tab" data-tab="notes">📖 Theory &amp; Notes</button>
+  </nav>
+
+  <div class="header-actions">
+    <button class="icon-btn" id="export-csv-btn" title="Export Data as CSV">⬇️</button>
+    <button class="icon-btn" id="screenshot-btn" title="Screenshot Graph">📷</button>
+    <button class="icon-btn" id="theme-toggle" title="Toggle Dark/Light">🌙</button>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="page">
+
+<!-- ═══════════════ SIMULATOR TAB ═══════════════ -->
+<div class="tab-panel active" id="tab-simulator">
+
+  <!-- TOP ROW: Setup | Lab | Controls -->
+  <div class="top-row">
+
+    <!-- SETUP PANEL -->
+    <div class="card" id="setup-col">
+      <div class="card-head">
+        <span class="card-head-icon">⚙️</span>
+        <span class="card-head-title">Experiment Setup</span>
+      </div>
+      <div class="card-body">
+
+        <div class="fg">
+          <label class="fl">Acid (in cup)</label>
+          <select class="fs" id="acid-select">
+            <option value="HCl">Hydrochloric Acid (HCl)</option>
+            <option value="H2SO4">Sulfuric Acid (H₂SO₄)</option>
+          </select>
+        </div>
+
+        <div class="rxn-box" id="rxn-display">
+          NaOH(aq) + HCl(aq) → NaCl(aq) + H₂O(l)
+        </div>
+
+        <div class="fr2">
+          <div class="fg">
+            <label class="fl">Acid conc. (mol/L)</label>
+            <input class="fi" id="c-acid" type="number" min="0.1" max="5" step="0.1" value="1.0">
+          </div>
+          <div class="fg">
+            <label class="fl">Base conc. (mol/L)</label>
+            <input class="fi" id="c-base" type="number" min="0.1" max="5" step="0.1" value="1.0">
+          </div>
+        </div>
+
+        <div class="fr2">
+          <div class="fg">
+            <label class="fl">Vol. acid (mL)</label>
+            <input class="fi" id="v-acid" type="number" min="5" max="100" step="5" value="25">
+          </div>
+          <div class="fg">
+            <label class="fl">Init. temp (°C)</label>
+            <input class="fi" id="t-init" type="number" min="15" max="35" step="0.5" value="25.0">
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="fg">
+          <div class="sl-row">
+            <span class="sl-lbl">Student Variation</span>
+            <span class="sl-val" id="variation-val">0</span>
+          </div>
+          <input type="range" id="variation" min="-10" max="10" step="1" value="0">
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px;">Offsets temperature readings ±</div>
+        </div>
+
+        <div class="fg">
+          <div class="sl-row">
+            <span class="sl-lbl">Noise Level</span>
+            <span class="sl-val" id="noise-val">0.1</span>
+          </div>
+          <input type="range" id="noise-level" min="0" max="1" step="0.05" value="0.1">
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px;">Random fluctuation added to readings</div>
+        </div>
+
+        <div class="fg">
+          <div class="sl-row">
+            <span class="sl-lbl">Heat Loss Factor</span>
+            <span class="sl-val" id="heatloss-val">1.0</span>
+          </div>
+          <input type="range" id="heat-loss" min="0.1" max="3" step="0.1" value="1.0">
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px;">Post-equivalence cooling rate</div>
+        </div>
+
+        <div class="sep"></div>
+        <button class="btn btn-outline btn-block btn-sm" id="reset-all">🔄 Reset Experiment</button>
+      </div>
+    </div>
+
+    <!-- VIRTUAL LAB -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">🔬</span>
+        <span class="card-head-title">Virtual Laboratory</span>
+        <div class="card-head-extra">
+          <span class="stat-pill" id="eq-vol-stat" style="display:none;">
+            <span style="color:var(--eq);">★</span> V<sub>eq</sub> = <span id="eq-vol-preview">–</span> mL
+          </span>
+        </div>
+      </div>
+      <div class="lab-wrap">
+        <svg id="lab-svg" viewBox="0 0 320 348" xmlns="http://www.w3.org/2000/svg" style="max-height:340px;width:100%;">
+          <defs>
+            <linearGradient id="buretteGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#c8e8f5"/>
+              <stop offset="50%" stop-color="#eef8fd"/>
+              <stop offset="100%" stop-color="#c8e8f5"/>
+            </linearGradient>
+            <linearGradient id="buretteLiquidGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#3a9bbf"/>
+              <stop offset="50%" stop-color="#60c0e0"/>
+              <stop offset="100%" stop-color="#3a9bbf"/>
+            </linearGradient>
+            <linearGradient id="acidGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#c0e8f0" stop-opacity="0.55"/>
+              <stop offset="100%" stop-color="#80c8e0" stop-opacity="0.80"/>
+            </linearGradient>
+            <linearGradient id="standGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#909090"/>
+              <stop offset="50%" stop-color="#c0c0c0"/>
+              <stop offset="100%" stop-color="#909090"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="softglow">
+              <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- ── RETORT STAND ── -->
+          <!-- Vertical rod -->
+          <rect x="26" y="8" width="6" height="306" rx="3" fill="url(#standGrad)" opacity="0.85"/>
+          <!-- Horizontal base -->
+          <rect x="8" y="310" width="62" height="8" rx="4" fill="#aaaaaa" opacity="0.7"/>
+          <!-- Base shadow -->
+          <ellipse cx="39" cy="322" rx="35" ry="4" fill="#888" opacity="0.18"/>
+
+          <!-- Clamp arm (horizontal, connects rod to burette) -->
+          <rect x="32" y="30" width="122" height="9" rx="4.5" fill="#777" opacity="0.75"/>
+          <!-- Clamp ring around burette -->
+          <rect x="148" y="24" width="18" height="20" rx="4" fill="#666" opacity="0.7"/>
+
+          <!-- ── BURETTE (centre x=163) ── -->
+          <!-- Glass body -->
+          <rect id="burette-glass" x="150" y="16" width="26" height="202" rx="3.5"
+                fill="url(#buretteGrad)" stroke="#90c8e0" stroke-width="1.5" opacity="0.92"/>
+          <!-- NaOH liquid (dynamic height via JS) -->
+          <rect id="burette-liquid" x="152" y="18" width="22" height="192" rx="2"
+                fill="url(#buretteLiquidGrad)" opacity="0.82"/>
+
+          <!-- Graduation marks (right side of burette) -->
+          <g stroke="#5a90b0" stroke-width="0.8" opacity="0.8">
+            <line x1="176" y1="38"  x2="184" y2="38"/> <text x="187" y="41"  font-size="6.5" fill="#7aaac0">0</text>
+            <line x1="176" y1="57"  x2="184" y2="57"/> <text x="187" y="60"  font-size="6.5" fill="#7aaac0">5</text>
+            <line x1="176" y1="76"  x2="184" y2="76"/> <text x="187" y="79"  font-size="6.5" fill="#7aaac0">10</text>
+            <line x1="176" y1="95"  x2="184" y2="95"/> <text x="187" y="98"  font-size="6.5" fill="#7aaac0">15</text>
+            <line x1="176" y1="114" x2="184" y2="114"/><text x="187" y="117" font-size="6.5" fill="#7aaac0">20</text>
+            <line x1="176" y1="133" x2="184" y2="133"/><text x="187" y="136" font-size="6.5" fill="#7aaac0">25</text>
+            <line x1="176" y1="152" x2="184" y2="152"/><text x="187" y="155" font-size="6.5" fill="#7aaac0">30</text>
+            <line x1="176" y1="171" x2="184" y2="171"/><text x="187" y="174" font-size="6.5" fill="#7aaac0">35</text>
+            <line x1="176" y1="190" x2="184" y2="190"/><text x="187" y="193" font-size="6.5" fill="#7aaac0">40</text>
+            <line x1="176" y1="209" x2="184" y2="209"/><text x="187" y="212" font-size="6.5" fill="#7aaac0">45</text>
+            <line x1="176" y1="218" x2="184" y2="218"/><text x="187" y="221" font-size="6.5" fill="#7aaac0">50</text>
+          </g>
+          <!-- Minor ticks -->
+          <g stroke="#5a90b0" stroke-width="0.5" opacity="0.45">
+            <line x1="176" y1="42"  x2="180" y2="42"/>
+            <line x1="176" y1="46"  x2="180" y2="46"/>
+            <line x1="176" y1="50"  x2="180" y2="50"/>
+            <line x1="176" y1="54"  x2="180" y2="54"/>
+            <line x1="176" y1="61"  x2="180" y2="61"/>
+            <line x1="176" y1="65"  x2="180" y2="65"/>
+            <line x1="176" y1="69"  x2="180" y2="69"/>
+            <line x1="176" y1="73"  x2="180" y2="73"/>
+          </g>
+
+          <!-- Stopcock (amber knob, centre x=163) -->
+          <rect x="153" y="214" width="20" height="9" rx="4.5" fill="#c87830" stroke="#a06020" stroke-width="1"/>
+          <circle cx="175" cy="218" r="5" fill="#d09040" stroke="#a07020" stroke-width="0.8"/>
+
+          <!-- Burette tip (centre x=163) -->
+          <polygon points="157,223 169,223 166,246 160,246"
+                   fill="#a0d0e8" stroke="#70a8c8" stroke-width="1"/>
+
+          <!-- Drop animation (falls straight down into cup) -->
+          <circle id="drop1" cx="163" cy="252" r="3.5" fill="#50b8d8" opacity="0" filter="url(#glow)"/>
+          <circle id="drop2" cx="163" cy="263" r="2.5" fill="#50b8d8" opacity="0"/>
+          <text id="drop-label" x="178" y="260" font-size="7.5" fill="#40a0c0" opacity="0">+ adding…</text>
+
+          <!-- Burette label above -->
+          <text x="163" y="11" font-size="8.5" fill="#3888b0" text-anchor="middle" font-weight="700">NaOH</text>
+
+          <!-- ── STYROFOAM CUP (centre x=163, directly under burette) ── -->
+          <g id="cup-group">
+            <!-- Cup wall — trapezoid wider at top (realistic styrofoam cup) -->
+            <polygon points="109,256 117,326 209,326 217,256"
+                     fill="#f0efec" stroke="#c8c6c0" stroke-width="2"/>
+            <!-- Rim ellipse (top opening) -->
+            <ellipse cx="163" cy="256" rx="54" ry="5" fill="#e8e6e2" stroke="#c0bebb" stroke-width="1.5"/>
+            <!-- Styrofoam horizontal texture lines (clipped) -->
+            <clipPath id="cup-clip">
+              <polygon points="109,256 117,326 209,326 217,256"/>
+            </clipPath>
+            <g stroke="#dddbd6" stroke-width="0.6" opacity="0.85" clip-path="url(#cup-clip)">
+              <line x1="109" y1="275" x2="217" y2="275"/>
+              <line x1="110" y1="293" x2="216" y2="293"/>
+              <line x1="111" y1="311" x2="215" y2="311"/>
+            </g>
+            <!-- Cup bottom ellipse (footing shadow) -->
+            <ellipse cx="163" cy="327" rx="46" ry="4.5" fill="#b8b6b0" opacity="0.25"/>
+
+            <!-- Acid liquid (dynamic via JS, clipped to cup) -->
+            <rect id="cup-liquid" x="107" y="282" width="112" height="44"
+                  fill="url(#acidGrad)" clip-path="url(#cup-clip)" opacity="0.75"/>
+            <!-- Liquid surface shimmer -->
+            <ellipse id="liquid-surface" cx="163" cy="282" rx="50" ry="4"
+                     fill="#b0e0f0" opacity="0.55" clip-path="url(#cup-clip)"/>
+
+            <!-- Thermometer (slightly right of centre so drop is visible) -->
+            <!-- Tube -->
+            <rect x="174" y="240" width="5" height="84" rx="2.5"
+                  fill="#e8f8f0" stroke="#88c4b0" stroke-width="0.9" opacity="0.92"/>
+            <!-- Bulb -->
+            <circle cx="176" cy="326" r="5.5" fill="#e03030" opacity="0.9"/>
+            <!-- Mercury column (dynamic height via JS) -->
+            <rect id="thermo-mercury" x="175" y="290" width="2.5" height="31" rx="1.2"
+                  fill="#e03030" opacity="0.85"/>
+
+            <!-- Temperature readout label (above cup opening) -->
+            <text id="cup-temp-text" x="163" y="248" font-size="8.5" fill="#1a9060"
+                  text-anchor="middle" font-weight="700" filter="url(#softglow)">25.0°C</text>
+          </g>
+
+          <!-- Acid label inside cup -->
+          <text x="143" y="308" font-size="7" fill="#3888b0" text-anchor="middle" opacity="0.7"
+                clip-path="url(#cup-clip)">acid</text>
+
+          <!-- Bottom labels -->
+          <text x="163" y="339" font-size="8" fill="#888" text-anchor="middle" opacity="0.8">Styrofoam Cup (analyte)</text>
+          <text x="163" y="348" font-size="7.5" fill="#777" text-anchor="middle" opacity="0.6">50 mL Burette — NaOH(aq) titrant</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- CONTROLS PANEL -->
+    <div class="card" id="setup-col">
+      <div class="card-head">
+        <span class="card-head-icon">🎛️</span>
+        <span class="card-head-title">Controls &amp; Readings</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Digital display -->
+        <div class="digital-panel">
+          <div class="dp-item">
+            <div class="dp-label">Volume Added</div>
+            <div class="dp-val"><span id="disp-vol">0.0</span><span class="dp-unit">mL</span></div>
+          </div>
+          <div class="dp-item">
+            <div class="dp-label">Temperature</div>
+            <div class="dp-val"><span id="disp-temp">25.0</span><span class="dp-unit">°C</span></div>
+          </div>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Volume Increment</label>
+          <div class="inc-group" id="inc-group">
+            <button class="inc-btn" data-inc="0.5">0.5</button>
+            <button class="inc-btn active" data-inc="1">1 mL</button>
+            <button class="inc-btn" data-inc="2">2 mL</button>
+            <button class="inc-btn" data-inc="5">5 mL</button>
+            <button class="inc-btn" data-inc="10">10 mL</button>
+            <input class="fi" id="custom-inc" type="number" min="0.1" max="25" step="0.1" value="1" placeholder="Custom" style="max-width:72px;margin-top:0;">
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <button class="btn btn-primary btn-block" id="add-naoh-btn" style="font-size:14px;padding:11px 0;margin-bottom:8px;">
+          ➕ Add NaOH (1 mL)
+        </button>
+
+        <button class="btn btn-success btn-block" id="record-btn" style="margin-bottom:8px;">
+          📌 Record Data Point
+        </button>
+
+        <button class="btn btn-outline btn-block btn-sm" id="add-and-record-btn" style="margin-bottom:10px;">
+          ⚡ Add &amp; Auto-Record
+        </button>
+
+        <div class="sep"></div>
+
+        <div class="tgl-row">
+          <span class="tgl-lbl">Auto-record mode</span>
+          <label class="tgl"><input type="checkbox" id="auto-rec-toggle"><span class="tgl-slider"></span></label>
+        </div>
+
+        <div class="sep"></div>
+
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+          <strong style="color:var(--text-dim);">Current status:</strong>
+          <span id="status-text">Ready — add NaOH to begin</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:11.5px;color:var(--text-dim);">
+          <div>📍 V<sub>eq</sub> (predicted): <span id="veq-display" style="font-family:var(--mono);color:var(--eq);">–</span></div>
+          <div>🌡️ ΔT<sub>max</sub> (predicted): <span id="dtmax-display" style="font-family:var(--mono);color:var(--success);">–</span></div>
+          <div>🧪 Moles of acid: <span id="nacid-display" style="font-family:var(--mono);color:var(--accent);">–</span></div>
+        </div>
+
+        <div class="sep"></div>
+        <button class="btn btn-outline btn-block btn-sm" id="reset-lab-btn" style="color:var(--danger);border-color:var(--danger);">
+          🗑️ Clear Current Run
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW: Data Table | Graph -->
+  <div class="bottom-row">
+
+    <!-- DATA TABLE -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">📊</span>
+        <span class="card-head-title">Data Table</span>
+        <div class="card-head-extra">
+          <span id="row-count" style="font-size:11px;color:var(--text-muted);">0 points</span>
+          <button class="btn btn-outline btn-xs" id="export-csv-btn2">⬇️ CSV</button>
+          <button class="btn btn-outline btn-xs" id="clear-table-btn">🗑️ Clear</button>
+        </div>
+      </div>
+      <div class="tbl-scroll">
+        <table class="data-tbl" id="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>V(NaOH) / mL</th>
+              <th>Temp / °C</th>
+              <th>Group</th>
+              <th>Remove</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr><td colspan="5" class="empty-state">No data recorded yet.<br><small>Add NaOH and click <strong>Record Data Point</strong></small></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-body" style="padding:10px 14px;border-top:1px solid var(--border);background:var(--surface2);">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">
+          Click a row to assign it to a group (Rising/Falling) for best-fit analysis
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span class="badge badge-blue">● Rising line</span>
+          <span class="badge badge-red">● Falling line</span>
+          <span class="badge badge-purple">★ Equivalence</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRAPH -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">📈</span>
+        <span class="card-head-title">Temperature vs Volume Graph</span>
+        <div class="card-head-extra">
+          <div class="ps-row">
+            <button class="ps-opt active" data-style="circle" title="Circular points">⭕</button>
+            <button class="ps-opt" data-style="cross" title="Cross points">✕</button>
+            <button class="ps-opt" data-style="square" title="Square points">◻</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="graph-toolbar">
+        <button class="sel-btn mode-rising" id="select-rising-btn">🔵 Select Rising Points</button>
+        <button class="sel-btn mode-falling" id="select-falling-btn">🔴 Select Falling Points</button>
+        <button class="sel-btn" id="clear-selection-btn">✕ Clear Selection</button>
+        <button class="sel-btn" id="find-eq-btn" style="background:var(--eq-light);border-color:var(--eq);color:var(--eq);">★ Find Equivalence</button>
+
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+          <div class="tgl-row" style="gap:6px;">
+            <span class="tgl-lbl">Major grid</span>
+            <label class="tgl"><input type="checkbox" id="major-grid" checked><span class="tgl-slider"></span></label>
+          </div>
+          <div class="tgl-row" style="gap:6px;">
+            <span class="tgl-lbl">Minor grid</span>
+            <label class="tgl"><input type="checkbox" id="minor-grid" checked><span class="tgl-slider"></span></label>
+          </div>
+          <div class="tgl-row" style="gap:6px;">
+            <span class="tgl-lbl">Best-fit</span>
+            <label class="tgl"><input type="checkbox" id="show-bestfit" checked><span class="tgl-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode indicator -->
+      <div id="mode-indicator" style="display:none;padding:6px 14px;font-size:12px;font-weight:600;background:var(--rising-light);color:var(--rising);border-bottom:1px solid var(--border);">
+        🔵 Click data points on the graph to select them for the <span id="mode-label">Rising</span> line
+      </div>
+
+      <!-- Canvas -->
+      <div class="canvas-wrap">
+        <canvas id="graph-canvas" width="900" height="440"></canvas>
+      </div>
+
+      <!-- Equivalence result -->
+      <div class="eq-result" id="eq-result">
+        <div class="eq-result-title">★ Equivalence Point (Intersection of Best-Fit Lines)</div>
+        <div class="eq-vals">
+          <div class="eq-v">
+            <div class="eq-v-lbl">V(NaOH) at EP</div>
+            <div class="eq-v-num"><span id="eq-v-val">–</span> mL</div>
+          </div>
+          <div class="eq-v">
+            <div class="eq-v-lbl">Temperature at EP</div>
+            <div class="eq-v-num"><span id="eq-t-val">–</span> °C</div>
+          </div>
+          <div class="eq-v">
+            <div class="eq-v-lbl">ΔT (Max Rise)</div>
+            <div class="eq-v-num"><span id="eq-dt-val">–</span> °C</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Graph legend -->
+      <div class="graph-legend">
+        <div class="lg-item"><div class="lg-dot" style="background:var(--accent);"></div> Data points</div>
+        <div class="lg-item"><div class="lg-dot" style="background:var(--rising);"></div> Rising selected</div>
+        <div class="lg-item"><div class="lg-line" style="background:var(--rising);"></div> Rising best-fit</div>
+        <div class="lg-item"><div class="lg-dot" style="background:var(--falling);"></div> Falling selected</div>
+        <div class="lg-line" style="background:var(--falling);"></div>
+        <div class="lg-item" style="margin-left:-10px;">Falling best-fit</div>
+        <div class="lg-item"><div class="lg-dot" style="background:var(--eq);"></div> Equivalence point</div>
+      </div>
+
+      <!-- Axis settings -->
+      <details class="axis-settings">
+        <summary>⚙️ Axis Customisation</summary>
+        <div class="axis-settings-body">
+          <div class="ax-cols">
+            <div>
+              <div class="ax-group-title">X-Axis (Volume)</div>
+              <div class="ax-row">
+                <input class="ax-i" id="ax-x-label" placeholder="X label" value="Volume of NaOH Added">
+                <input class="ax-i" id="ax-x-unit" placeholder="Unit" value="mL">
+              </div>
+              <div class="ax-row">
+                <input class="ax-i" id="ax-x-min" type="number" placeholder="Min" value="0">
+                <input class="ax-i" id="ax-x-max" type="number" placeholder="Max" value="50">
+              </div>
+              <div class="ax-row">
+                <input class="ax-i" id="ax-x-major" type="number" placeholder="Major step" value="5">
+                <input class="ax-i" id="ax-x-minor" type="number" placeholder="Minor step" value="1">
+              </div>
+            </div>
+            <div>
+              <div class="ax-group-title">Y-Axis (Temperature)</div>
+              <div class="ax-row">
+                <input class="ax-i" id="ax-y-label" placeholder="Y label" value="Temperature">
+                <input class="ax-i" id="ax-y-unit" placeholder="Unit" value="°C">
+              </div>
+              <div class="ax-row">
+                <input class="ax-i" id="ax-y-min" type="number" placeholder="Min" value="20">
+                <input class="ax-i" id="ax-y-max" type="number" placeholder="Max" value="45">
+              </div>
+              <div class="ax-row">
+                <input class="ax-i" id="ax-y-major" type="number" placeholder="Major step" value="2.5">
+                <input class="ax-i" id="ax-y-minor" type="number" placeholder="Minor step" value="0.5">
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button class="btn btn-primary btn-sm" id="apply-axes-btn">Apply</button>
+            <button class="btn btn-outline btn-sm" id="auto-scale-btn">Auto Scale</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+  </div>
+
+  <!-- ═══ EXTERNAL DATA IMPORT (full-width card) ═══ -->
+  <div class="card" style="margin-top:14px;" id="import-card">
+    <div class="card-head">
+      <span class="card-head-icon">📥</span>
+      <span class="card-head-title">Import External Data</span>
+      <div class="card-head-extra">
+        <span style="font-size:11px;color:var(--text-muted);">Bring in real lab results to use the graphing &amp; analysis tools</span>
+      </div>
+    </div>
+    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+      <!-- LEFT: Row-by-row manual entry -->
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;">
+          ✏️ Manual Row Entry
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">
+          Enter one V, T reading at a time. Press <kbd style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:11px;">Enter</kbd> on the Temperature field to add quickly.
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;">
+          <div style="flex:1;">
+            <label class="fl">Volume (mL)</label>
+            <input class="fi" id="import-v" type="number" step="0.01" min="0" placeholder="e.g. 5.00">
+          </div>
+          <div style="flex:1;">
+            <label class="fl">Temperature (°C)</label>
+            <input class="fi" id="import-t" type="number" step="0.01" placeholder="e.g. 28.4">
+          </div>
+          <button class="btn btn-primary" id="import-add-row-btn" style="flex-shrink:0;margin-bottom:1px;">➕ Add</button>
+        </div>
+        <div id="import-row-status" style="font-size:11px;color:var(--success);min-height:18px;"></div>
+
+        <div class="sep" style="margin:12px 0;"></div>
+
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px;">
+          📂 Import from CSV File
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+          Select a .csv or .txt file with two columns: Volume, Temperature (one pair per line).
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="file" id="import-file" accept=".csv,.txt" style="display:none;">
+          <button class="btn btn-outline btn-sm" id="import-file-btn">📂 Choose File</button>
+          <span id="import-file-name" style="font-size:11.5px;color:var(--text-muted);font-family:var(--mono);">No file selected</span>
+        </div>
+      </div>
+
+      <!-- RIGHT: Batch paste -->
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;">
+          📋 Batch Paste
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;line-height:1.6;">
+          Paste multiple readings at once. Accepts <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-size:11px;">V, T</code> or <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-size:11px;">V&nbsp;&nbsp;T</code> or <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-size:11px;">V;T</code> — one pair per line. Lines beginning with <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-size:11px;">#</code> are treated as comments.
+        </div>
+        <textarea id="import-batch" class="fi" rows="6"
+          style="resize:vertical;font-size:11.5px;line-height:1.7;"
+          placeholder="# Paste your data below&#10;0,   25.0&#10;5,   27.4&#10;10,  30.1&#10;15,  33.5&#10;20,  35.8&#10;25,  35.2&#10;30,  33.6&#10;35,  31.8"></textarea>
+        <div style="display:flex;gap:8px;margin-top:9px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" id="import-batch-btn">📥 Import All</button>
+          <button class="btn btn-outline btn-sm" id="import-preview-btn">👁 Preview</button>
+          <button class="btn btn-outline btn-sm" id="import-clear-paste-btn">✕ Clear</button>
+          <span id="import-status" style="font-size:11.5px;color:var(--text-muted);margin-left:4px;font-family:var(--mono);"></span>
+        </div>
+        <div id="import-preview-area"
+          style="display:none;margin-top:10px;max-height:130px;overflow-y:auto;
+                 background:var(--surface2);border:1px solid var(--border);border-radius:7px;
+                 padding:9px 12px;font-family:var(--mono);font-size:11px;line-height:1.8;">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ NOTES TAB ═══════════════ -->
+<div class="tab-panel" id="tab-notes">
+  <div class="notes-page">
+    <h1 class="notes-h1">Thermometric Titration</h1>
+    <p class="notes-tagline">A comprehensive reference for CAPE Chemistry Unit 2 and University-level Analytical Chemistry</p>
+
+    <section class="notes-section">
+      <h2 class="notes-h2">1. Introduction</h2>
+      <p class="notes-p">Thermometric titration is an analytical technique in which the endpoint of a titration is determined by monitoring the temperature change of the reaction mixture. Rather than relying on a colour indicator or pH electrode, this method exploits the enthalpy change of the chemical reaction occurring between titrant and analyte.</p>
+      <p class="notes-p">As titrant is added, temperature rises (for exothermic reactions) until the equivalence point is reached. Beyond this point, no further reaction occurs, and the temperature falls due to dilution and heat loss to the surroundings. The equivalence point is located by extrapolating both the rising and falling portions of the temperature–volume curve to their intersection.</p>
+      <div class="note-callout">
+        <strong>Key Advantage:</strong> Thermometric titration can detect endpoints that are inaccessible to potentiometric or indicator methods, because it responds to <em>enthalpy change</em> rather than free energy change alone. This is particularly useful for weak acids/bases with low K values.
+      </div>
+    </section>
+
+    <section class="notes-section">
+      <h2 class="notes-h2">2. Reactions in This Simulator</h2>
+
+      <h3 class="notes-h3">Reaction 1: NaOH + Hydrochloric Acid</h3>
+      <div class="eq-block">NaOH(aq) + HCl(aq) → NaCl(aq) + H₂O(l)     ΔH = −57.6 kJ mol⁻¹</div>
+      <p class="notes-p">This is a 1:1 (monoprotic) neutralisation. The equivalence volume of NaOH equals the volume of HCl that contains the same number of moles as the NaOH solution. The standard enthalpy of neutralisation for a strong acid–strong base pair is approximately −57.6 kJ mol⁻¹ (per mole of water formed).</p>
+
+      <h3 class="notes-h3">Reaction 2: NaOH + Sulfuric Acid</h3>
+      <div class="eq-block">H₂SO₄(aq) + 2NaOH(aq) → Na₂SO₄(aq) + 2H₂O(l)     ΔH = −2 × 57.6 = −115.2 kJ mol⁻¹</div>
+      <p class="notes-p">Sulfuric acid is a diprotic acid — each molecule provides two H⁺ ions. Therefore, two moles of NaOH are required for every mole of H₂SO₄. The equivalence volume of NaOH is therefore twice what would be needed for an equimolar HCl solution.</p>
+
+      <table class="notes-tbl">
+        <thead><tr><th>Property</th><th>HCl / NaOH</th><th>H₂SO₄ / NaOH</th></tr></thead>
+        <tbody>
+          <tr><td>Acid type</td><td>Monoprotic strong acid</td><td>Diprotic strong acid</td></tr>
+          <tr><td>Molar ratio (acid:base)</td><td>1 : 1</td><td>1 : 2</td></tr>
+          <tr><td>ΔH per mol H₂O</td><td>−57.6 kJ mol⁻¹</td><td>−57.6 kJ mol⁻¹</td></tr>
+          <tr><td>ΔH per mol acid</td><td>−57.6 kJ mol⁻¹</td><td>−115.2 kJ mol⁻¹</td></tr>
+          <tr><td>Net ionic equation</td><td>H⁺ + OH⁻ → H₂O</td><td>2H⁺ + 2OH⁻ → 2H₂O</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="notes-section">
+      <h2 class="notes-h2">3. Temperature Model &amp; Calculations</h2>
+
+      <h3 class="notes-h3">3.1 Predicting the Equivalence Volume</h3>
+      <div class="eq-block">
+        V<sub>eq</sub>(NaOH) = (n × c<sub>acid</sub> × V<sub>acid</sub>) / c<sub>NaOH</sub>
+        <br><br>where n = 1 for HCl, n = 2 for H₂SO₄
+      </div>
+
+      <h3 class="notes-h3">3.2 Temperature Rise Before Equivalence</h3>
+      <p class="notes-p">As NaOH is added up to the equivalence point, the temperature rises. Assuming perfect insulation (styrofoam cup):</p>
+      <div class="eq-block">
+        q = |ΔH| × n<sub>H₂O formed</sub><br><br>
+        ΔT = q / (m<sub>total</sub> × C<sub>p</sub>)<br><br>
+        T = T<sub>initial</sub> + ΔT<br><br>
+        where: m<sub>total</sub> = (V<sub>acid</sub> + V<sub>NaOH</sub>) g    [density ≈ 1 g/mL]<br>
+        C<sub>p</sub> = 4.18 J g⁻¹ °C⁻¹   (specific heat of water)
+      </div>
+
+      <h3 class="notes-h3">3.3 Temperature After Equivalence</h3>
+      <p class="notes-p">Beyond the equivalence point, no further heat is produced. The temperature falls because room-temperature NaOH dilutes the warm solution, and there is ongoing heat loss to the surroundings:</p>
+      <div class="eq-block">
+        T(V) ≈ [T<sub>eq</sub> × (V<sub>acid</sub> + V<sub>eq</sub>) + T<sub>room</sub> × V<sub>excess</sub>] / (V<sub>acid</sub> + V<sub>NaOH</sub>) − k × V<sub>excess</sub>
+      </div>
+      <p class="notes-p">where k is a heat loss coefficient dependent on insulation quality (adjustable in this simulator as the "Heat Loss Factor" slider).</p>
+
+      <h3 class="notes-h3">3.4 Calculating Enthalpy of Neutralisation</h3>
+      <div class="eq-block">
+        q = m<sub>total</sub> × C<sub>p</sub> × ΔT<sub>max</sub><br><br>
+        ΔH<sub>neut</sub> = −q / n<sub>H₂O</sub>    [kJ mol⁻¹]
+      </div>
+    </section>
+
+    <section class="notes-section">
+      <h2 class="notes-h2">4. Graphical Analysis — Finding the Equivalence Point</h2>
+      <p class="notes-p">Because real experiments involve heat losses, the peak temperature is lower than the theoretical maximum. The correct equivalence point is found by extrapolating two best-fit lines:</p>
+      <ol style="font-size:13.5px;line-height:2;color:var(--text-dim);padding-left:20px;margin-bottom:12px;">
+        <li>A <strong style="color:var(--rising);">rising line</strong> through points before the equivalence point</li>
+        <li>A <strong style="color:var(--falling);">falling line</strong> through points after the equivalence point</li>
+        <li>The <strong style="color:var(--eq);">intersection</strong> of these two extrapolated lines gives the corrected equivalence point</li>
+      </ol>
+      <p class="notes-p">In this simulator, you manually select the rising and falling points, and the app calculates the best-fit lines using linear regression, then computes their intersection.</p>
+
+      <h3 class="notes-h3">Linear Regression Formula</h3>
+      <div class="eq-block">
+        Gradient m = (nΣxy − ΣxΣy) / (nΣx² − (Σx)²)<br><br>
+        Intercept b = (Σy − mΣx) / n<br><br>
+        Best-fit line: T = mV + b<br><br>
+        Intersection: V<sub>eq</sub> = (b₂ − b₁) / (m₁ − m₂),   T<sub>eq</sub> = m₁V<sub>eq</sub> + b₁
+      </div>
+    </section>
+
+    <section class="notes-section">
+      <h2 class="notes-h2">5. Experimental Sources of Error</h2>
+      <table class="notes-tbl">
+        <thead><tr><th>Source of Error</th><th>Effect</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td>Heat loss to surroundings</td><td>Peak temperature lower than theoretical</td><td>Use styrofoam cup; use graphical extrapolation</td></tr>
+          <tr><td>Slow thermal equilibration</td><td>Readings lag behind actual temperature</td><td>Stir after each addition; allow time before reading</td></tr>
+          <tr><td>Dilution effect</td><td>Concentration decreases as V increases</td><td>Use concentrated titrant; account in model</td></tr>
+          <tr><td>Heat capacity of thermometer</td><td>Absorbs some heat from solution</td><td>Use thin electronic temperature probe</td></tr>
+          <tr><td>Incomplete dissociation</td><td>Slightly less heat evolved</td><td>Use standard strong acid/base pairs for benchmarking</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="notes-section">
+      <h2 class="notes-h2">6. Key Thermochemical Data</h2>
+      <table class="notes-tbl">
+        <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>ΔH<sub>neut</sub> (strong acid + strong base)</td><td>−57.6 kJ mol⁻¹ (per mol H₂O)</td></tr>
+          <tr><td>Specific heat capacity of water (C<sub>p</sub>)</td><td>4.18 J g⁻¹ °C⁻¹</td></tr>
+          <tr><td>Density of dilute aqueous solutions</td><td>≈ 1.00 g mL⁻¹</td></tr>
+          <tr><td>Standard conditions</td><td>298 K, 100 kPa</td></tr>
+          <tr><td>Net ionic equation</td><td>H⁺(aq) + OH⁻(aq) → H₂O(l)</td></tr>
+        </tbody>
+      </table>
+      <div class="note-callout">
+        <strong>Literature Values:</strong> The standard enthalpy of neutralisation for strong acid–strong base is −57.6 kJ mol⁻¹. Experimental results typically range between −55 and −59 kJ mol⁻¹ due to heat losses. This constant value arises because strong acids and bases are fully dissociated — the reaction is simply H⁺ + OH⁻ → H₂O regardless of which ions are present.
+      </div>
+    </section>
+  </div>
+</div>
+</main>
+
+<!-- Tooltip -->
+<div class="pt-tooltip" id="pt-tooltip"></div>
+
+<!-- Click card -->
+<div class="click-card" id="click-card">
+  <div class="cc-header">
+    <span class="cc-title">Data Point</span>
+    <button class="cc-close" id="cc-close">✕</button>
+  </div>
+  <div class="cc-row"><span class="cc-key">Volume (NaOH)</span><span class="cc-val" id="cc-vol">–</span></div>
+  <div class="cc-row"><span class="cc-key">Temperature</span><span class="cc-val" id="cc-temp">–</span></div>
+  <div class="cc-row"><span class="cc-key">Group</span><span class="cc-val" id="cc-group">–</span></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toast-icon">✅</span>
+  <span id="toast-text">Data point recorded</span>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  STATE & CONFIGURATION
+// ═══════════════════════════════════════════════════
+let appState = {
+  vAdded: 0,           // volume of NaOH added so far (mL)
+  currentTemp: 25.0,
+  dataPoints: [],      // {id, v, t, group} group: null|'rising'|'falling'
+  nextId: 1,
+  selectionMode: null, // null | 'rising' | 'falling'
+  pointStyle: 'circle',
+  increment: 1,
+  autoRecord: false,
+};
+
+let axisConfig = {
+  xLabel: 'Volume of NaOH Added', xUnit: 'mL',
+  xMin: 0, xMax: 50, xMajor: 5, xMinor: 1,
+  yLabel: 'Temperature', yUnit: '°C',
+  yMin: 20, yMax: 45, yMajor: 2.5, yMinor: 0.5,
+};
+
+let gridConfig = { major: true, minor: true };
+let showBestFit = true;
+
+// ═══════════════════════════════════════════════════
+//  TEMPERATURE MODEL
+// ═══════════════════════════════════════════════════
+function gaussianRandom() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function getConfig() {
+  return {
+    acidType: document.getElementById('acid-select').value,
+    cAcid: parseFloat(document.getElementById('c-acid').value) || 1.0,
+    cBase: parseFloat(document.getElementById('c-base').value) || 1.0,
+    vAcid: parseFloat(document.getElementById('v-acid').value) || 25.0,
+    tInit: parseFloat(document.getElementById('t-init').value) || 25.0,
+    variation: parseFloat(document.getElementById('variation').value) || 0,
+    noiseLevel: parseFloat(document.getElementById('noise-level').value) || 0.1,
+    heatLoss: parseFloat(document.getElementById('heat-loss').value) || 1.0,
+  };
+}
+
+function calcEquivalenceVolume(cfg) {
+  const { acidType, cAcid, cBase, vAcid } = cfg;
+  const nH = acidType === 'H2SO4' ? 2 * cAcid * vAcid / 1000 : cAcid * vAcid / 1000;
+  return (nH / cBase) * 1000; // mL
+}
+
+function calcMaxDeltaT(cfg) {
+  const { cAcid, cBase, vAcid, acidType } = cfg;
+  const nH = acidType === 'H2SO4' ? 2 * cAcid * vAcid / 1000 : cAcid * vAcid / 1000;
+  const vEq = calcEquivalenceVolume(cfg);
+  const mTotal = vAcid + vEq;
+  const q = 57600 * nH;
+  return q / (mTotal * 4.18);
+}
+
+function calculateTemperature(vNaOH, cfg, addNoise = true) {
+  const { acidType, cAcid, cBase, vAcid, tInit, variation, noiseLevel, heatLoss } = cfg;
+  const DH = 57600; // J/mol magnitude
+  const Cp = 4.18;
+
+  const nH = acidType === 'H2SO4' ? 2 * cAcid * vAcid / 1000 : cAcid * vAcid / 1000;
+  const vEq = (nH / cBase) * 1000;
+  const nBase = cBase * vNaOH / 1000;
+  const nH2O = Math.min(nBase, nH);
+  const mTotal = vAcid + vNaOH;
+
+  // Heat released
+  const q = DH * nH2O;
+  const dT = q / (mTotal * Cp);
+
+  let T;
+
+  if (vNaOH <= vEq) {
+    T = tInit + dT;
+  } else {
+    // Temperature at equivalence
+    const mEq = vAcid + vEq;
+    const qEq = DH * nH;
+    const tEq = tInit + qEq / (mEq * Cp);
+
+    // Dilution cooling: mixing hot solution (volume mEq) with room-temp NaOH (volume vExcess)
+    const vExcess = vNaOH - vEq;
+    const tDiluted = (tEq * mEq + tInit * vExcess) / mTotal;
+
+    // Additional heat loss
+    const kLoss = 0.08 * heatLoss;
+    T = tDiluted - kLoss * vExcess;
+  }
+
+  // Student variation offset
+  T += variation * 0.18;
+
+  // Add noise
+  if (addNoise && noiseLevel > 0) {
+    T += gaussianRandom() * noiseLevel * 0.35;
+  }
+
+  return Math.round(T * 100) / 100;
+}
+
+// ═══════════════════════════════════════════════════
+//  LINEAR REGRESSION & INTERSECTION
+// ═══════════════════════════════════════════════════
+function linearRegression(points) {
+  const n = points.length;
+  if (n < 2) return null;
+  const sx = points.reduce((s, p) => s + p.v, 0);
+  const sy = points.reduce((s, p) => s + p.t, 0);
+  const sxy = points.reduce((s, p) => s + p.v * p.t, 0);
+  const sx2 = points.reduce((s, p) => s + p.v * p.v, 0);
+  const denom = n * sx2 - sx * sx;
+  if (Math.abs(denom) < 1e-10) return null;
+  const m = (n * sxy - sx * sy) / denom;
+  const b = (sy - m * sx) / n;
+  return { m, b };
+}
+
+function lineIntersection(l1, l2) {
+  if (!l1 || !l2) return null;
+  const dm = l1.m - l2.m;
+  if (Math.abs(dm) < 1e-10) return null;
+  const x = (l2.b - l1.b) / dm;
+  const y = l1.m * x + l1.b;
+  return { v: x, t: y };
+}
+
+// ═══════════════════════════════════════════════════
+//  CANVAS GRAPH ENGINE
+// ═══════════════════════════════════════════════════
+const canvas = document.getElementById('graph-canvas');
+const ctx = canvas.getContext('2d');
+
+let graphMargin = { top: 40, right: 40, bottom: 65, left: 70 };
+
+function getThemeColors() {
+  const s = getComputedStyle(document.documentElement);
+  return {
+    bg: s.getPropertyValue('--surface').trim(),
+    text: s.getPropertyValue('--text').trim(),
+    textDim: s.getPropertyValue('--text-dim').trim(),
+    textMuted: s.getPropertyValue('--text-muted').trim(),
+    border: s.getPropertyValue('--border').trim(),
+    accent: s.getPropertyValue('--accent').trim(),
+    rising: s.getPropertyValue('--rising').trim(),
+    falling: s.getPropertyValue('--falling').trim(),
+    eq: s.getPropertyValue('--eq').trim(),
+    surface2: s.getPropertyValue('--surface2').trim(),
+  };
+}
+
+function resizeCanvas() {
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth;
+  const h = Math.max(380, Math.min(480, w * 0.52));
+  canvas.width = w;
+  canvas.height = h;
+  drawGraph();
+}
+
+function toCanvasX(v) {
+  const { left, right } = graphMargin;
+  return left + (v - axisConfig.xMin) / (axisConfig.xMax - axisConfig.xMin) * (canvas.width - left - right);
+}
+
+function toCanvasY(t) {
+  const { top, bottom } = graphMargin;
+  return canvas.height - bottom - (t - axisConfig.yMin) / (axisConfig.yMax - axisConfig.yMin) * (canvas.height - top - bottom);
+}
+
+function toDataV(cx) {
+  return axisConfig.xMin + (cx - graphMargin.left) / (canvas.width - graphMargin.left - graphMargin.right) * (axisConfig.xMax - axisConfig.xMin);
+}
+
+function toDataT(cy) {
+  return axisConfig.yMin + (canvas.height - graphMargin.bottom - cy) / (canvas.height - graphMargin.top - graphMargin.bottom) * (axisConfig.yMax - axisConfig.yMin);
+}
+
+function drawGraph() {
+  const c = ctx;
+  const W = canvas.width, H = canvas.height;
+  const { left, right, top, bottom } = graphMargin;
+  const plotW = W - left - right;
+  const plotH = H - top - bottom;
+  const tc = getThemeColors();
+
+  c.clearRect(0, 0, W, H);
+
+  // Background
+  c.fillStyle = tc.bg;
+  c.fillRect(0, 0, W, H);
+
+  // Plot area fill
+  c.fillStyle = tc.surface2;
+  c.fillRect(left, top, plotW, plotH);
+
+  // ── GRIDLINES ──────────────────────────────────────
+  function drawGridLines(axis, isMinor) {
+    const step = axis === 'x'
+      ? (isMinor ? axisConfig.xMinor : axisConfig.xMajor)
+      : (isMinor ? axisConfig.yMinor : axisConfig.yMajor);
+    const min = axis === 'x' ? axisConfig.xMin : axisConfig.yMin;
+    const max = axis === 'x' ? axisConfig.xMax : axisConfig.yMax;
+
+    c.strokeStyle = isMinor
+      ? (document.documentElement.dataset.theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)')
+      : (document.documentElement.dataset.theme === 'dark' ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)');
+    c.lineWidth = isMinor ? 0.6 : 1;
+    c.setLineDash([]);
+
+    if (step <= 0) return;
+    for (let v = min; v <= max + step * 0.01; v += step) {
+      v = Math.round(v * 1e6) / 1e6;
+      if (axis === 'x') {
+        const cx = toCanvasX(v);
+        if (cx >= left && cx <= W - right) {
+          c.beginPath(); c.moveTo(cx, top); c.lineTo(cx, H - bottom); c.stroke();
+        }
+      } else {
+        const cy = toCanvasY(v);
+        if (cy >= top && cy <= H - bottom) {
+          c.beginPath(); c.moveTo(left, cy); c.lineTo(W - right, cy); c.stroke();
+        }
+      }
+    }
+  }
+
+  if (gridConfig.minor) { drawGridLines('x', true); drawGridLines('y', true); }
+  if (gridConfig.major) { drawGridLines('x', false); drawGridLines('y', false); }
+
+  // ── AXES ────────────────────────────────────────────
+  c.strokeStyle = tc.textDim;
+  c.lineWidth = 1.5;
+  c.setLineDash([]);
+
+  // X axis
+  c.beginPath();
+  c.moveTo(left, H - bottom);
+  c.lineTo(W - right, H - bottom);
+  c.stroke();
+
+  // Y axis
+  c.beginPath();
+  c.moveTo(left, top);
+  c.lineTo(left, H - bottom);
+  c.stroke();
+
+  // ── TICK MARKS & LABELS ──────────────────────────────
+  c.fillStyle = tc.textDim;
+  c.font = '11px ' + getComputedStyle(document.body).fontFamily;
+  c.textAlign = 'center';
+  c.textBaseline = 'top';
+
+  // X ticks
+  for (let v = axisConfig.xMin; v <= axisConfig.xMax + axisConfig.xMajor * 0.01; v += axisConfig.xMajor) {
+    v = Math.round(v * 1e6) / 1e6;
+    const cx = toCanvasX(v);
+    if (cx >= left && cx <= W - right + 2) {
+      c.strokeStyle = tc.textDim;
+      c.lineWidth = 1;
+      c.beginPath(); c.moveTo(cx, H - bottom); c.lineTo(cx, H - bottom + 5); c.stroke();
+      c.fillStyle = tc.textDim;
+      c.fillText(v, cx, H - bottom + 7);
+    }
+  }
+
+  // Y ticks
+  c.textAlign = 'right';
+  c.textBaseline = 'middle';
+  for (let t = axisConfig.yMin; t <= axisConfig.yMax + axisConfig.yMajor * 0.01; t += axisConfig.yMajor) {
+    t = Math.round(t * 1e6) / 1e6;
+    const cy = toCanvasY(t);
+    if (cy >= top - 2 && cy <= H - bottom) {
+      c.strokeStyle = tc.textDim;
+      c.lineWidth = 1;
+      c.beginPath(); c.moveTo(left, cy); c.lineTo(left - 5, cy); c.stroke();
+      c.fillStyle = tc.textDim;
+      c.fillText(t, left - 8, cy);
+    }
+  }
+
+  // ── AXIS LABELS ──────────────────────────────────────
+  c.font = 'bold 12px ' + getComputedStyle(document.body).fontFamily;
+  c.fillStyle = tc.text;
+  c.textAlign = 'center';
+  c.textBaseline = 'bottom';
+  c.fillText(axisConfig.xLabel + ' / ' + axisConfig.xUnit, left + plotW / 2, H - 5);
+
+  c.save();
+  c.translate(16, top + plotH / 2);
+  c.rotate(-Math.PI / 2);
+  c.textBaseline = 'top';
+  c.fillText(axisConfig.yLabel + ' / ' + axisConfig.yUnit, 0, 0);
+  c.restore();
+
+  // ── CLIP to plot area ─────────────────────────────────
+  c.save();
+  c.beginPath();
+  c.rect(left, top, plotW, plotH);
+  c.clip();
+
+  // ── BEST FIT LINES ────────────────────────────────────
+  const risingPts = appState.dataPoints.filter(p => p.group === 'rising');
+  const fallingPts = appState.dataPoints.filter(p => p.group === 'falling');
+  const lRising = linearRegression(risingPts);
+  const lFalling = linearRegression(fallingPts);
+
+  if (showBestFit) {
+    if (lRising) drawLine(lRising, tc.rising, []);
+    if (lFalling) drawLine(lFalling, tc.falling, []);
+  }
+
+  // Equivalence point
+  if (lRising && lFalling) {
+    const ep = lineIntersection(lRising, lFalling);
+    if (ep) {
+      const epX = toCanvasX(ep.v);
+      const epY = toCanvasY(ep.t);
+
+      // Vertical dashed line
+      c.strokeStyle = tc.eq;
+      c.lineWidth = 1.5;
+      c.setLineDash([5, 4]);
+      c.beginPath(); c.moveTo(epX, top); c.lineTo(epX, H - bottom); c.stroke();
+      c.setLineDash([]);
+
+      // Star marker
+      c.fillStyle = tc.eq;
+      drawStar(c, epX, epY, 8, 5);
+
+      // Label
+      c.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
+      c.fillStyle = tc.eq;
+      c.textAlign = 'left';
+      c.textBaseline = 'bottom';
+      c.fillText('EP (' + ep.v.toFixed(2) + ', ' + ep.t.toFixed(2) + ')', epX + 7, epY - 4);
+    }
+  }
+
+  // ── DATA POINTS ──────────────────────────────────────
+  appState.dataPoints.forEach(p => {
+    const cx = toCanvasX(p.v);
+    const cy = toCanvasY(p.t);
+    if (cx < left - 2 || cx > W - right + 2 || cy < top - 2 || cy > H - bottom + 2) return;
+
+    let color = tc.accent;
+    if (p.group === 'rising') color = tc.rising;
+    else if (p.group === 'falling') color = tc.falling;
+
+    const isSelected = (appState.selectionMode === 'rising' && p.group === 'rising') ||
+                       (appState.selectionMode === 'falling' && p.group === 'falling');
+
+    drawPoint(c, cx, cy, color, appState.pointStyle, 5.5, isSelected);
+  });
+
+  c.restore();
+
+  // ── BORDER ───────────────────────────────────────────
+  c.strokeStyle = tc.border;
+  c.lineWidth = 1;
+  c.setLineDash([]);
+  c.strokeRect(left, top, plotW, plotH);
+}
+
+function drawLine(line, color, dash) {
+  const W = canvas.width, H = canvas.height;
+  const { left, right, top, bottom } = graphMargin;
+  const x1 = axisConfig.xMin, x2 = axisConfig.xMax;
+  const y1 = line.m * x1 + line.b;
+  const y2 = line.m * x2 + line.b;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.setLineDash(dash || [6, 3]);
+  ctx.beginPath();
+  ctx.moveTo(toCanvasX(x1), toCanvasY(y1));
+  ctx.lineTo(toCanvasX(x2), toCanvasY(y2));
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawPoint(c, cx, cy, color, style, r, selected) {
+  c.fillStyle = color;
+  c.strokeStyle = selected ? '#fff' : color;
+  c.lineWidth = selected ? 2.5 : 1.5;
+
+  if (style === 'circle') {
+    c.beginPath();
+    c.arc(cx, cy, r, 0, Math.PI * 2);
+    c.fill();
+    if (selected) { c.strokeStyle = 'rgba(255,255,255,0.7)'; c.stroke(); }
+  } else if (style === 'cross') {
+    c.strokeStyle = color;
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(cx - r, cy - r); c.lineTo(cx + r, cy + r);
+    c.moveTo(cx + r, cy - r); c.lineTo(cx - r, cy + r);
+    c.stroke();
+  } else if (style === 'square') {
+    c.beginPath();
+    c.rect(cx - r, cy - r, r * 2, r * 2);
+    c.fill();
+    if (selected) { c.strokeStyle = 'rgba(255,255,255,0.7)'; c.stroke(); }
+  }
+}
+
+function drawStar(c, cx, cy, outerR, innerR) {
+  const spikes = 5;
+  let rot = (Math.PI / 2) * 3;
+  const step = Math.PI / spikes;
+  c.beginPath();
+  for (let i = 0; i < spikes; i++) {
+    c.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+    rot += step;
+    c.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+    rot += step;
+  }
+  c.closePath();
+  c.fill();
+}
+
+// Hit detection
+function findNearestPoint(canvasX, canvasY, threshold = 14) {
+  let best = null, bestDist = threshold;
+  appState.dataPoints.forEach(p => {
+    const cx = toCanvasX(p.v);
+    const cy = toCanvasY(p.t);
+    const d = Math.hypot(cx - canvasX, cy - canvasY);
+    if (d < bestDist) { bestDist = d; best = p; }
+  });
+  return best;
+}
+
+// ═══════════════════════════════════════════════════
+//  CANVAS EVENTS
+// ═══════════════════════════════════════════════════
+const tooltip = document.getElementById('pt-tooltip');
+const clickCard = document.getElementById('click-card');
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const pt = findNearestPoint(cx, cy);
+
+  if (pt) {
+    canvas.style.cursor = 'pointer';
+    tooltip.innerHTML = `<strong>${axisConfig.xLabel}:</strong> ${pt.v.toFixed(2)} ${axisConfig.xUnit}<br><strong>${axisConfig.yLabel}:</strong> ${pt.t.toFixed(2)} ${axisConfig.yUnit}`;
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY - 14) + 'px';
+    tooltip.classList.add('show');
+  } else {
+    canvas.style.cursor = appState.selectionMode ? 'crosshair' : 'default';
+    tooltip.classList.remove('show');
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  tooltip.classList.remove('show');
+});
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const pt = findNearestPoint(cx, cy);
+
+  if (!pt) return;
+
+  if (appState.selectionMode) {
+    // Toggle group
+    if (pt.group === appState.selectionMode) {
+      pt.group = null;
+    } else {
+      pt.group = appState.selectionMode;
+    }
+    // Sync table row class
+    syncTableRowClasses();
+    drawGraph();
+    return;
+  }
+
+  // Show click card
+  document.getElementById('cc-vol').textContent = pt.v.toFixed(2) + ' ' + axisConfig.xUnit;
+  document.getElementById('cc-temp').textContent = pt.t.toFixed(2) + ' ' + axisConfig.yUnit;
+  document.getElementById('cc-group').textContent = pt.group ? pt.group.charAt(0).toUpperCase() + pt.group.slice(1) : 'Unassigned';
+  clickCard.style.left = (e.clientX + 14) + 'px';
+  clickCard.style.top = (e.clientY - 14) + 'px';
+  clickCard.classList.add('show');
+});
+
+document.getElementById('cc-close').addEventListener('click', () => clickCard.classList.remove('show'));
+document.addEventListener('click', (e) => {
+  if (!clickCard.contains(e.target) && e.target !== canvas) clickCard.classList.remove('show');
+});
+
+// ═══════════════════════════════════════════════════
+//  LAB SVG ANIMATION
+// ═══════════════════════════════════════════════════
+function updateLabSVG() {
+  const cfg = getConfig();
+  const vEq = calcEquivalenceVolume(cfg);
+  const maxVol = 50; // burette capacity
+
+  // ── Burette liquid level ──────────────────────────
+  // Liquid column: y=18 (full) → y=210 (empty), maxH=192
+  const liquidEl = document.getElementById('burette-liquid');
+  const maxH = 192;
+  const fraction = Math.max(0, (maxVol - appState.vAdded) / maxVol);
+  const newH = fraction * maxH;
+  const newY = 18 + (maxH - newH);  // slides down as liquid drains
+  if (liquidEl) {
+    liquidEl.setAttribute('y', newY);
+    liquidEl.setAttribute('height', Math.max(0, newH));
+  }
+
+  // ── Cup liquid level & temperature colour ─────────
+  // Cup body: top=256, bottom=326; liquid fills from bottom up
+  // Initial liquid base y=318 (just above bottom), dynamic top moves up
+  const cupLiquid = document.getElementById('cup-liquid');
+  const liquidSurface = document.getElementById('liquid-surface');
+  if (cupLiquid) {
+    const baseH = 44;                                     // initial liquid height
+    const addedFraction = Math.min(appState.vAdded / maxVol, 1);
+    const newCupH = baseH + addedFraction * 28;           // grows as NaOH added
+    const newCupY = 324 - newCupH;                        // top of liquid rect
+    cupLiquid.setAttribute('y', newCupY);
+    cupLiquid.setAttribute('height', newCupH);
+
+    if (liquidSurface) {
+      liquidSurface.setAttribute('cy', newCupY);
+      // Surface ellipse shrinks a little as liquid rises (cup is tapered)
+      const rx = Math.max(36, 50 - addedFraction * 6);
+      liquidSurface.setAttribute('rx', rx);
+    }
+
+    // Temperature → colour  (cool=light-blue → warm=amber/red)
+    const T = appState.currentTemp;
+    const tMin = cfg.tInit;
+    const tMax = cfg.tInit + calcMaxDeltaT(cfg) + 2;
+    const tFrac = Math.min(1, Math.max(0, (T - tMin) / (tMax - tMin)));
+    const r = Math.round(80  + tFrac * 160);
+    const g = Math.round(190 - tFrac * 110);
+    const b = Math.round(230 - tFrac * 130);
+    cupLiquid.setAttribute('fill', `rgb(${r},${g},${b})`);
+    cupLiquid.setAttribute('opacity', '0.70');
+  }
+
+  // ── Thermometer mercury ───────────────────────────
+  // Tube occupies y=240–320; bulb centre at y=326
+  const mercury = document.getElementById('thermo-mercury');
+  const tempText = document.getElementById('cup-temp-text');
+  if (mercury) {
+    const T = appState.currentTemp;
+    const tMin = cfg.tInit - 2;
+    const tMax = cfg.tInit + calcMaxDeltaT(cfg) + 3;
+    const frac = Math.min(1, Math.max(0, (T - tMin) / (tMax - tMin)));
+    const maxMercH = 78;                            // max mercury column height
+    const mercH = 3 + frac * maxMercH;
+    const mercY = 320 - mercH;                      // grows upward from y=320
+    mercury.setAttribute('y', mercY);
+    mercury.setAttribute('height', mercH);
+
+    // Cold→blue, warm→orange, hot→red
+    const r2 = Math.round(frac * 230);
+    const g2 = Math.round(48 - frac * 40);
+    const b2 = Math.round(220 - frac * 210);
+    mercury.setAttribute('fill', `rgb(${r2},${g2},${b2})`);
+  }
+  if (tempText) {
+    tempText.textContent = appState.currentTemp.toFixed(1) + '°C';
+  }
+}
+
+function animateDrop() {
+  const drop1 = document.getElementById('drop1');
+  const drop2 = document.getElementById('drop2');
+  const lbl = document.getElementById('drop-label');
+  if (!drop1) return;
+
+  // Reset positions (cx is fixed in SVG at 163, aligned with cup centre)
+  drop1.setAttribute('cy', '252');
+  drop2.setAttribute('cy', '263');
+
+  let frame = 0;
+  const interval = setInterval(() => {
+    frame++;
+    const progress = frame / 20;
+    drop1.setAttribute('cy', 252 + progress * 55);
+    drop1.setAttribute('opacity', 1 - progress * 0.85);
+    drop2.setAttribute('cy', 263 + progress * 44);
+    drop2.setAttribute('opacity', Math.max(0, 0.8 - progress));
+    if (lbl) lbl.setAttribute('opacity', Math.max(0, 0.9 - progress * 0.8));
+    if (frame >= 20) {
+      clearInterval(interval);
+      drop1.setAttribute('opacity', 0);
+      drop2.setAttribute('opacity', 0);
+      if (lbl) lbl.setAttribute('opacity', 0);
+    }
+  }, 25);
+
+  // Show drop label briefly
+  if (lbl) lbl.setAttribute('opacity', '0.8');
+}
+
+// ═══════════════════════════════════════════════════
+//  UI ACTIONS
+// ═══════════════════════════════════════════════════
+function updatePredictions() {
+  const cfg = getConfig();
+  const vEq = calcEquivalenceVolume(cfg);
+  const dtMax = calcMaxDeltaT(cfg);
+  const nAcid = cfg.acidType === 'H2SO4' ? 2 * cfg.cAcid * cfg.vAcid / 1000 : cfg.cAcid * cfg.vAcid / 1000;
+
+  document.getElementById('veq-display').textContent = vEq.toFixed(2) + ' mL';
+  document.getElementById('dtmax-display').textContent = dtMax.toFixed(2) + ' °C';
+  document.getElementById('nacid-display').textContent = nAcid.toFixed(4) + ' mol';
+
+  document.getElementById('eq-vol-preview').textContent = vEq.toFixed(1);
+  document.getElementById('eq-vol-stat').style.display = '';
+
+  updateAddButtonLabel();
+}
+
+function updateAddButtonLabel() {
+  const inc = appState.increment;
+  document.getElementById('add-naoh-btn').textContent = `➕ Add NaOH (${inc} mL)`;
+}
+
+function updateDisplays() {
+  const cfg = getConfig();
+  appState.currentTemp = calculateTemperature(appState.vAdded, cfg, appState.vAdded > 0);
+
+  document.getElementById('disp-vol').textContent = appState.vAdded.toFixed(1);
+  document.getElementById('disp-temp').textContent = appState.currentTemp.toFixed(1);
+
+  // Status
+  const vEq = calcEquivalenceVolume(cfg);
+  let status = 'Ready — add NaOH to begin';
+  if (appState.vAdded > 0 && appState.vAdded < vEq * 0.9) status = '↑ Rising — below equivalence';
+  else if (appState.vAdded >= vEq * 0.9 && appState.vAdded <= vEq * 1.1) status = '★ Near equivalence point';
+  else if (appState.vAdded > vEq * 1.1) status = '↓ Falling — past equivalence';
+  document.getElementById('status-text').textContent = status;
+}
+
+function addNaOH() {
+  const cfg = getConfig();
+  appState.vAdded = Math.round((appState.vAdded + appState.increment) * 1000) / 1000;
+  updateDisplays();
+  updateLabSVG();
+  animateDrop();
+
+  if (appState.autoRecord) recordPoint();
+
+  drawGraph();
+}
+
+function recordPoint() {
+  const T = appState.currentTemp;
+  const V = appState.vAdded;
+
+  const pt = { id: appState.nextId++, v: V, t: T, group: null };
+  appState.dataPoints.push(pt);
+
+  addTableRow(pt);
+  autoAssignGroup(pt);
+  updateRowCount();
+  drawGraph();
+  showToast('✅', `Recorded: V=${V.toFixed(1)} mL, T=${T.toFixed(1)}°C`);
+
+  // Auto-scale axes if needed
+  if (V > axisConfig.xMax * 0.9) {
+    axisConfig.xMax = Math.ceil(V * 1.3 / 5) * 5;
+    syncAxisInputs();
+  }
+  if (T > axisConfig.yMax * 0.95) {
+    axisConfig.yMax = Math.ceil((T + 2) / 2.5) * 2.5;
+    syncAxisInputs();
+  }
+  if (T < axisConfig.yMin + 1) {
+    axisConfig.yMin = Math.floor((T - 2) / 2.5) * 2.5;
+    syncAxisInputs();
+  }
+}
+
+function autoAssignGroup(pt) {
+  const cfg = getConfig();
+  const vEq = calcEquivalenceVolume(cfg);
+  // Rough auto-assign for context (user can override)
+}
+
+function addTableRow(pt) {
+  const tbody = document.getElementById('table-body');
+
+  // Remove empty state
+  const empty = tbody.querySelector('.empty-state');
+  if (empty) empty.parentElement.remove();
+
+  const tr = document.createElement('tr');
+  tr.dataset.id = pt.id;
+  tr.innerHTML = `
+    <td>${pt.id}</td>
+    <td style="font-weight:500;">${pt.v.toFixed(2)}</td>
+    <td style="color:var(--accent);font-weight:500;">${pt.t.toFixed(2)}</td>
+    <td id="grp-${pt.id}"><span style="color:var(--text-muted);font-size:11px;">–</span></td>
+    <td><button class="btn btn-danger-ghost btn-sm" onclick="removePoint(${pt.id})">🗑️</button></td>
+  `;
+  tr.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') return;
+    cycleGroup(pt.id);
+  });
+  tbody.appendChild(tr);
+}
+
+function cycleGroup(id) {
+  const pt = appState.dataPoints.find(p => p.id === id);
+  if (!pt) return;
+  const groups = [null, 'rising', 'falling'];
+  const idx = groups.indexOf(pt.group);
+  pt.group = groups[(idx + 1) % groups.length];
+  syncTableRowClasses();
+  drawGraph();
+}
+
+function syncTableRowClasses() {
+  appState.dataPoints.forEach(pt => {
+    const tr = document.querySelector(`tr[data-id="${pt.id}"]`);
+    if (!tr) return;
+    tr.classList.remove('rising-sel', 'falling-sel');
+    if (pt.group === 'rising') tr.classList.add('rising-sel');
+    if (pt.group === 'falling') tr.classList.add('falling-sel');
+
+    const grpCell = document.getElementById('grp-' + pt.id);
+    if (grpCell) {
+      if (pt.group === 'rising') grpCell.innerHTML = '<span class="badge badge-blue">Rising</span>';
+      else if (pt.group === 'falling') grpCell.innerHTML = '<span class="badge badge-red">Falling</span>';
+      else grpCell.innerHTML = '<span style="color:var(--text-muted);font-size:11px;">–</span>';
+    }
+  });
+}
+
+function removePoint(id) {
+  appState.dataPoints = appState.dataPoints.filter(p => p.id !== id);
+  const tr = document.querySelector(`tr[data-id="${id}"]`);
+  if (tr) tr.remove();
+
+  if (appState.dataPoints.length === 0) {
+    document.getElementById('table-body').innerHTML =
+      '<tr><td colspan="5" class="empty-state">No data recorded yet.<br><small>Add NaOH and click <strong>Record Data Point</strong></small></td></tr>';
+  }
+  updateRowCount();
+  drawGraph();
+}
+
+function updateRowCount() {
+  document.getElementById('row-count').textContent = appState.dataPoints.length + ' points';
+}
+
+function findEquivalencePoint() {
+  const rising = appState.dataPoints.filter(p => p.group === 'rising');
+  const falling = appState.dataPoints.filter(p => p.group === 'falling');
+
+  if (rising.length < 2 || falling.length < 2) {
+    showToast('⚠️', 'Select ≥2 rising and ≥2 falling points first');
+    return;
+  }
+
+  const l1 = linearRegression(rising);
+  const l2 = linearRegression(falling);
+  const ep = lineIntersection(l1, l2);
+
+  if (!ep) { showToast('⚠️', 'Lines are parallel — cannot find intersection'); return; }
+
+  const cfg = getConfig();
+  const dt = ep.t - cfg.tInit;
+
+  document.getElementById('eq-v-val').textContent = ep.v.toFixed(2);
+  document.getElementById('eq-t-val').textContent = ep.t.toFixed(2);
+  document.getElementById('eq-dt-val').textContent = dt.toFixed(2);
+  document.getElementById('eq-result').classList.add('show');
+
+  drawGraph();
+  showToast('★', `Equivalence: V=${ep.v.toFixed(2)} mL, T=${ep.t.toFixed(2)}°C`);
+}
+
+// ═══════════════════════════════════════════════════
+//  AXIS CONTROLS
+// ═══════════════════════════════════════════════════
+function syncAxisInputs() {
+  document.getElementById('ax-x-min').value = axisConfig.xMin;
+  document.getElementById('ax-x-max').value = axisConfig.xMax;
+  document.getElementById('ax-x-major').value = axisConfig.xMajor;
+  document.getElementById('ax-x-minor').value = axisConfig.xMinor;
+  document.getElementById('ax-y-min').value = axisConfig.yMin;
+  document.getElementById('ax-y-max').value = axisConfig.yMax;
+  document.getElementById('ax-y-major').value = axisConfig.yMajor;
+  document.getElementById('ax-y-minor').value = axisConfig.yMinor;
+}
+
+function applyAxisSettings() {
+  axisConfig.xLabel = document.getElementById('ax-x-label').value || 'Volume';
+  axisConfig.xUnit = document.getElementById('ax-x-unit').value || 'mL';
+  axisConfig.xMin = parseFloat(document.getElementById('ax-x-min').value) || 0;
+  axisConfig.xMax = parseFloat(document.getElementById('ax-x-max').value) || 50;
+  axisConfig.xMajor = parseFloat(document.getElementById('ax-x-major').value) || 5;
+  axisConfig.xMinor = parseFloat(document.getElementById('ax-x-minor').value) || 1;
+  axisConfig.yLabel = document.getElementById('ax-y-label').value || 'Temperature';
+  axisConfig.yUnit = document.getElementById('ax-y-unit').value || '°C';
+  axisConfig.yMin = parseFloat(document.getElementById('ax-y-min').value) || 20;
+  axisConfig.yMax = parseFloat(document.getElementById('ax-y-max').value) || 45;
+  axisConfig.yMajor = parseFloat(document.getElementById('ax-y-major').value) || 2.5;
+  axisConfig.yMinor = parseFloat(document.getElementById('ax-y-minor').value) || 0.5;
+  drawGraph();
+  showToast('✅', 'Axis settings applied');
+}
+
+function autoScaleAxes() {
+  const cfg = getConfig();
+  const vEq = calcEquivalenceVolume(cfg);
+  const dtMax = calcMaxDeltaT(cfg);
+  const tMax = cfg.tInit + dtMax;
+
+  axisConfig.xMin = 0;
+  axisConfig.xMax = Math.ceil(vEq * 2.2 / 5) * 5;
+  axisConfig.xMajor = axisConfig.xMax / 10;
+  axisConfig.xMinor = axisConfig.xMajor / 5;
+  axisConfig.yMin = Math.floor((cfg.tInit - 1) / 2.5) * 2.5;
+  axisConfig.yMax = Math.ceil((tMax + 2) / 2.5) * 2.5;
+  axisConfig.yMajor = 2.5;
+  axisConfig.yMinor = 0.5;
+
+  // If data exists, fit to data
+  if (appState.dataPoints.length > 0) {
+    const vs = appState.dataPoints.map(p => p.v);
+    const ts = appState.dataPoints.map(p => p.t);
+    const vRange = Math.max(...vs) - Math.min(...vs);
+    const tRange = Math.max(...ts) - Math.min(...ts);
+    axisConfig.xMin = 0;
+    axisConfig.xMax = Math.ceil((Math.max(...vs) * 1.2) / 5) * 5;
+    axisConfig.yMin = Math.floor((Math.min(...ts) - 1) / 2.5) * 2.5;
+    axisConfig.yMax = Math.ceil((Math.max(...ts) + 1.5) / 2.5) * 2.5;
+  }
+
+  syncAxisInputs();
+  drawGraph();
+  showToast('✅', 'Axes auto-scaled');
+}
+
+// ═══════════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════════
+function exportCSV() {
+  if (appState.dataPoints.length === 0) { showToast('⚠️', 'No data to export'); return; }
+  const cfg = getConfig();
+  const lines = [
+    `# ThermoCal Thermometric Titration Data`,
+    `# Acid: ${cfg.acidType}, c(acid): ${cfg.cAcid} mol/L, c(NaOH): ${cfg.cBase} mol/L, V(acid): ${cfg.vAcid} mL`,
+    `# T(initial): ${cfg.tInit} °C`,
+    ``,
+    `Point,Volume_NaOH_mL,Temperature_C,Group`,
+    ...appState.dataPoints.map(p => `${p.id},${p.v.toFixed(2)},${p.t.toFixed(2)},${p.group || 'Unassigned'}`)
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = `thermocal_${cfg.acidType}_${Date.now()}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('⬇️', 'Data exported as CSV');
+}
+
+function screenshotGraph() {
+  const url = canvas.toDataURL('image/png');
+  const a = document.createElement('a'); a.href = url;
+  a.download = `thermocal_graph_${Date.now()}.png`;
+  a.click();
+  showToast('📷', 'Graph saved as PNG');
+}
+
+// ═══════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════
+let toastTimeout;
+function showToast(icon, msg) {
+  clearTimeout(toastTimeout);
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-text').textContent = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════════════════════
+//  RESET
+// ═══════════════════════════════════════════════════
+function resetAll() {
+  appState.vAdded = 0;
+  appState.dataPoints = [];
+  appState.nextId = 1;
+  appState.selectionMode = null;
+  document.getElementById('table-body').innerHTML =
+    '<tr><td colspan="5" class="empty-state">No data recorded yet.<br><small>Add NaOH and click <strong>Record Data Point</strong></small></td></tr>';
+  document.getElementById('eq-result').classList.remove('show');
+  updateRowCount();
+  updateDisplays();
+  updateLabSVG();
+  drawGraph();
+  showToast('🔄', 'Experiment reset');
+}
+
+function resetLabOnly() {
+  appState.vAdded = 0;
+  updateDisplays();
+  updateLabSVG();
+  drawGraph();
+  showToast('🔄', 'Run cleared — data preserved');
+}
+
+// ═══════════════════════════════════════════════════
+//  EVENT LISTENERS
+// ═══════════════════════════════════════════════════
+// Tabs
+document.querySelectorAll('.nav-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'simulator') setTimeout(resizeCanvas, 50);
+  });
+});
+
+// Theme toggle
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  document.documentElement.dataset.theme = isDark ? 'light' : 'dark';
+  document.getElementById('theme-toggle').textContent = isDark ? '🌙' : '☀️';
+  setTimeout(drawGraph, 50);
+});
+
+// Increment buttons
+document.getElementById('inc-group').addEventListener('click', (e) => {
+  if (e.target.classList.contains('inc-btn')) {
+    document.querySelectorAll('.inc-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    appState.increment = parseFloat(e.target.dataset.inc);
+    document.getElementById('custom-inc').value = appState.increment;
+    updateAddButtonLabel();
+  }
+});
+
+document.getElementById('custom-inc').addEventListener('change', (e) => {
+  const v = parseFloat(e.target.value);
+  if (v > 0) {
+    appState.increment = v;
+    document.querySelectorAll('.inc-btn').forEach(b => b.classList.remove('active'));
+    updateAddButtonLabel();
+  }
+});
+
+// Add NaOH
+document.getElementById('add-naoh-btn').addEventListener('click', addNaOH);
+
+// Record
+document.getElementById('record-btn').addEventListener('click', recordPoint);
+
+// Add & record
+document.getElementById('add-and-record-btn').addEventListener('click', () => {
+  addNaOH();
+  setTimeout(recordPoint, 200);
+});
+
+// Auto-record toggle
+document.getElementById('auto-rec-toggle').addEventListener('change', (e) => {
+  appState.autoRecord = e.target.checked;
+  showToast(appState.autoRecord ? '⚡' : '✋', appState.autoRecord ? 'Auto-record enabled' : 'Auto-record disabled');
+});
+
+// Reset
+document.getElementById('reset-all').addEventListener('click', () => { if (confirm('Reset all data and settings?')) resetAll(); });
+document.getElementById('reset-lab-btn').addEventListener('click', resetLabOnly);
+document.getElementById('clear-table-btn').addEventListener('click', () => { if (confirm('Clear all data points?')) resetAll(); });
+
+// Export
+document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
+document.getElementById('export-csv-btn2').addEventListener('click', exportCSV);
+document.getElementById('screenshot-btn').addEventListener('click', screenshotGraph);
+
+// Acid select
+document.getElementById('acid-select').addEventListener('change', (e) => {
+  const rxn = e.target.value === 'H2SO4'
+    ? 'H₂SO₄(aq) + 2NaOH(aq) → Na₂SO₄(aq) + 2H₂O(l)'
+    : 'NaOH(aq) + HCl(aq) → NaCl(aq) + H₂O(l)';
+  document.getElementById('rxn-display').textContent = rxn;
+  updatePredictions();
+  updateDisplays();
+  updateLabSVG();
+  autoScaleAxes();
+});
+
+// Setup changes
+['c-acid', 'c-base', 'v-acid', 't-init'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    updatePredictions(); updateDisplays(); updateLabSVG(); autoScaleAxes();
+  });
+});
+
+// Sliders
+document.getElementById('variation').addEventListener('input', (e) => {
+  document.getElementById('variation-val').textContent = e.target.value;
+  updateDisplays();
+});
+
+document.getElementById('noise-level').addEventListener('input', (e) => {
+  document.getElementById('noise-val').textContent = e.target.value;
+});
+
+document.getElementById('heat-loss').addEventListener('input', (e) => {
+  document.getElementById('heatloss-val').textContent = e.target.value;
+});
+
+// Selection modes
+const selModeIndicator = document.getElementById('mode-indicator');
+const modeLbl = document.getElementById('mode-label');
+
+document.getElementById('select-rising-btn').addEventListener('click', () => {
+  if (appState.selectionMode === 'rising') {
+    appState.selectionMode = null;
+    selModeIndicator.style.display = 'none';
+    document.getElementById('select-rising-btn').classList.remove('active-rising');
+  } else {
+    appState.selectionMode = 'rising';
+    selModeIndicator.style.display = '';
+    selModeIndicator.style.background = 'var(--rising-light)';
+    selModeIndicator.style.color = 'var(--rising)';
+    selModeIndicator.style.borderBottom = '1px solid var(--rising)';
+    modeLbl.textContent = 'Rising';
+    document.getElementById('select-rising-btn').classList.add('active-rising');
+    document.getElementById('select-falling-btn').classList.remove('active-falling');
+  }
+  drawGraph();
+});
+
+document.getElementById('select-falling-btn').addEventListener('click', () => {
+  if (appState.selectionMode === 'falling') {
+    appState.selectionMode = null;
+    selModeIndicator.style.display = 'none';
+    document.getElementById('select-falling-btn').classList.remove('active-falling');
+  } else {
+    appState.selectionMode = 'falling';
+    selModeIndicator.style.display = '';
+    selModeIndicator.style.background = 'var(--falling-light)';
+    selModeIndicator.style.color = 'var(--falling)';
+    selModeIndicator.style.borderBottom = '1px solid var(--falling)';
+    modeLbl.textContent = 'Falling';
+    document.getElementById('select-falling-btn').classList.add('active-falling');
+    document.getElementById('select-rising-btn').classList.remove('active-rising');
+  }
+  drawGraph();
+});
+
+document.getElementById('clear-selection-btn').addEventListener('click', () => {
+  appState.dataPoints.forEach(p => p.group = null);
+  appState.selectionMode = null;
+  selModeIndicator.style.display = 'none';
+  document.getElementById('select-rising-btn').classList.remove('active-rising');
+  document.getElementById('select-falling-btn').classList.remove('active-falling');
+  syncTableRowClasses();
+  document.getElementById('eq-result').classList.remove('show');
+  drawGraph();
+  showToast('✕', 'Selection cleared');
+});
+
+document.getElementById('find-eq-btn').addEventListener('click', findEquivalencePoint);
+
+// Grid toggles
+document.getElementById('major-grid').addEventListener('change', (e) => { gridConfig.major = e.target.checked; drawGraph(); });
+document.getElementById('minor-grid').addEventListener('change', (e) => { gridConfig.minor = e.target.checked; drawGraph(); });
+document.getElementById('show-bestfit').addEventListener('change', (e) => { showBestFit = e.target.checked; drawGraph(); });
+
+// Point style
+document.querySelectorAll('.ps-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ps-opt').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    appState.pointStyle = btn.dataset.style;
+    drawGraph();
+  });
+});
+
+// Axis settings
+document.getElementById('apply-axes-btn').addEventListener('click', applyAxisSettings);
+document.getElementById('auto-scale-btn').addEventListener('click', autoScaleAxes);
+
+// Table row click assignment from graph also syncs table
+function syncTableFromState() { syncTableRowClasses(); }
+
+// ═══════════════════════════════════════════════════
+//  EXTERNAL DATA IMPORT
+// ═══════════════════════════════════════════════════
+function parseBatchData(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  const points = [];
+  for (const line of lines) {
+    // Support: comma, semicolon, tab, or 2+ spaces as delimiter
+    const parts = line.split(/[,;\t]|\s{2,}/).map(p => p.trim()).filter(p => p !== '');
+    if (parts.length >= 2) {
+      const v = parseFloat(parts[0]);
+      const t = parseFloat(parts[1]);
+      if (!isNaN(v) && !isNaN(t)) points.push({ v, t });
+    }
+  }
+  return points;
+}
+
+function importPointsIntoApp(pts) {
+  if (pts.length === 0) { showToast('⚠️', 'No valid data found to import'); return 0; }
+  pts.forEach(({ v, t }) => {
+    const pt = { id: appState.nextId++, v, t, group: null };
+    appState.dataPoints.push(pt);
+    addTableRow(pt);
+  });
+  updateRowCount();
+  autoScaleAxes();
+  drawGraph();
+  return pts.length;
+}
+
+// Manual row-by-row entry
+document.getElementById('import-add-row-btn').addEventListener('click', () => {
+  const v = parseFloat(document.getElementById('import-v').value);
+  const t = parseFloat(document.getElementById('import-t').value);
+  const statusEl = document.getElementById('import-row-status');
+  if (isNaN(v) || isNaN(t)) {
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = '⚠️ Enter valid numbers for both Volume and Temperature.';
+    return;
+  }
+  const pt = { id: appState.nextId++, v: Math.round(v*1000)/1000, t: Math.round(t*1000)/1000, group: null };
+  appState.dataPoints.push(pt);
+  addTableRow(pt);
+  updateRowCount();
+  drawGraph();
+  statusEl.style.color = 'var(--success)';
+  statusEl.textContent = `✅ Added: V = ${pt.v.toFixed(2)} mL, T = ${pt.t.toFixed(2)} °C`;
+  document.getElementById('import-v').value = '';
+  document.getElementById('import-t').value = '';
+  document.getElementById('import-v').focus();
+  // Auto-scale if needed
+  if (pt.v > axisConfig.xMax * 0.88) { axisConfig.xMax = Math.ceil(pt.v*1.3/5)*5; syncAxisInputs(); }
+  if (pt.t > axisConfig.yMax * 0.95) { axisConfig.yMax = Math.ceil((pt.t+2)/2.5)*2.5; syncAxisInputs(); }
+  if (pt.t < axisConfig.yMin + 1)    { axisConfig.yMin = Math.floor((pt.t-2)/2.5)*2.5; syncAxisInputs(); }
+  setTimeout(() => { statusEl.textContent = ''; }, 3000);
+});
+
+// Allow Enter on temperature field to trigger add
+document.getElementById('import-t').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('import-add-row-btn').click();
+});
+
+// Also allow Enter on volume field to jump to temp field
+document.getElementById('import-v').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('import-t').focus();
+});
+
+// Batch preview
+document.getElementById('import-preview-btn').addEventListener('click', () => {
+  const text = document.getElementById('import-batch').value;
+  const pts = parseBatchData(text);
+  const area = document.getElementById('import-preview-area');
+  const statusEl = document.getElementById('import-status');
+  if (pts.length === 0) {
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = '0 points found';
+    area.style.display = 'none';
+    return;
+  }
+  statusEl.style.color = 'var(--success)';
+  statusEl.textContent = `${pts.length} point${pts.length>1?'s':''} ready`;
+  area.style.display = 'block';
+  area.innerHTML = pts.map((p, i) =>
+    `<div style="color:var(--text-dim);padding:1px 0;">
+      <span style="color:var(--text-muted);min-width:24px;display:inline-block;">${i+1}.</span>
+      V = <strong style="color:var(--accent)">${p.v.toFixed(2)}</strong> mL &nbsp;|&nbsp;
+      T = <strong style="color:var(--success)">${p.t.toFixed(2)}</strong> °C
+    </div>`
+  ).join('');
+});
+
+// Batch import
+document.getElementById('import-batch-btn').addEventListener('click', () => {
+  const text = document.getElementById('import-batch').value;
+  const pts = parseBatchData(text);
+  const n = importPointsIntoApp(pts);
+  if (n > 0) {
+    document.getElementById('import-status').style.color = 'var(--success)';
+    document.getElementById('import-status').textContent = `✅ ${n} point${n>1?'s':''} imported`;
+    document.getElementById('import-preview-area').style.display = 'none';
+    showToast('📥', `Imported ${n} data point${n>1?'s':''} from paste`);
+  }
+});
+
+// Clear paste area
+document.getElementById('import-clear-paste-btn').addEventListener('click', () => {
+  document.getElementById('import-batch').value = '';
+  document.getElementById('import-status').textContent = '';
+  document.getElementById('import-preview-area').style.display = 'none';
+});
+
+// CSV file import
+document.getElementById('import-file-btn').addEventListener('click', () => {
+  document.getElementById('import-file').click();
+});
+
+document.getElementById('import-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('import-file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const text = ev.target.result;
+    const pts = parseBatchData(text);
+    const n = importPointsIntoApp(pts);
+    if (n > 0) {
+      showToast('📂', `Loaded ${n} point${n>1?'s':''} from "${file.name}"`);
+    } else {
+      showToast('⚠️', `No valid V,T pairs found in "${file.name}"`);
+    }
+  };
+  reader.readAsText(file);
+  // Reset input so the same file can be re-selected
+  e.target.value = '';
+});
+
+// ═══════════════════════════════════════════════════
+//  RESIZE OBSERVER
+// ═══════════════════════════════════════════════════
+const ro = new ResizeObserver(() => resizeCanvas());
+ro.observe(canvas.parentElement);
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+function init() {
+  updatePredictions();
+  updateDisplays();
+  updateLabSVG();
+  autoScaleAxes();
+  setTimeout(resizeCanvas, 100);
+}
+
+init();
+</script>
+</body>
+</html>
